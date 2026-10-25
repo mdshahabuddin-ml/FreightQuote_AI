@@ -1,0 +1,6 @@
+streamlit>=1.40
+bcrypt>=4.1
+pyngrok>=7.2
+pandas
+plotly
+requests

@@ -1,0 +1,39 @@
+*.db
+logs/*.log
+__pycache__/
+.env
+
+# Local backups and sensitive files
+app_backup_before_auth.py
+app_backup_before_security.py
+freightquote.db
+.env
+
+# Local secrets and environment files
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+
+# Local databases and runtime files
+*.db
+*.sqlite
+*.sqlite3
+logs/*
+!logs/.gitkeep
+
+# Backup files
+*.bak
+*.backup
+*.before_*
+*.pre_*
+*.phase1_*
+
+# Python generated files
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Notebook checkpoints
+.ipynb_checkpoints/
