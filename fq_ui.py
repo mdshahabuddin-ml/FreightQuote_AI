@@ -518,24 +518,19 @@ def _ro_connect(path):
 
 
 def discover_databases(primary=None):
-    found = []
+    # Use an explicitly supplied database when provided.
     if primary:
-        found.append(Path(primary))
-    for folder in (BASE_DIR, BASE_DIR / "database", BASE_DIR / "data"):
-        if folder.is_dir():
-            for pattern in ("*.db", "*.sqlite", "*.sqlite3"):
-                found.extend(sorted(folder.glob(pattern)))
-    seen, out = set(), []
-    for p in found:
-        try:
-            key = p.resolve()
-        except OSError:
-            continue
-        if key in seen or not p.exists() or p.name == "security_auth.db":
-            continue
-        seen.add(key)
-        out.append(p)
-    return out
+        p = Path(primary)
+        return [p] if p.is_file() and p.name != "security_auth.db" else []
+
+    # Use only the main project database by default.
+    main_db = BASE_DIR / "freightquote.db"
+
+    if main_db.is_file():
+        return [main_db]
+
+    # Do not automatically load backups if the main DB is missing.
+    return []
 
 
 def _norm_role(role):
@@ -882,17 +877,46 @@ def page_copilot(user, db_paths):
 
 def page_tables(pid, user, db_paths):
     tables = accessible_tables(user, db_paths)
+
+
     if pid == "reports":
         matches = tables
     else:
         keys = PAGE_KEYWORDS.get(pid, [])
-        matches = [t for t in tables if any(k in t["table"].lower() for k in keys)]
+
+        matches = [
+            t for t in tables
+            if any(k in t["table"].lower() for k in keys)
+        ]
+
+        # Route AI: also match tables with route-related columns.
+        if pid == "route":
+            for t in tables:
+                if t in matches:
+                    continue
+
+                column_names = [
+                    str(col[0]).lower()
+                    for col in t.get("columns", [])
+                ]
+
+                if any(
+                    key in column_name
+                    for column_name in column_names
+                    for key in keys
+                ):
+                    matches.append(t)
+
+
+
     if not matches:
         st.markdown(
             f'<div class="fq-empty"><div class="h">No {esc(PAGE_TITLES.get(pid, pid))} data yet</div>'
             f'<p>This module fills in automatically once its agent or a data feed writes '
             f'{esc(", ".join(PAGE_KEYWORDS.get(pid, ["records"])[:3]))} records to the database. '
-            f'Nothing is simulated here.</p></div>', unsafe_allow_html=True)
+            f'Nothing is simulated here.</p></div>',
+            unsafe_allow_html=True
+        )
         return
     if pid == "reports":
         total_rows = sum(t["rows"] or 0 for t in matches)
