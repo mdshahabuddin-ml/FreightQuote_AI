@@ -1133,5 +1133,11 @@ def render_app(user, db_path, on_sign_out):
         page_admin(user, db_path)
     elif pid == "profile":
         page_profile(user, db_path)
+    elif pid == "carriers":
+        from aisstream_carriers import render_carriers_page
+        render_carriers_page()
+    elif pid == "weather":
+        from weather_risk import render_weather_risk_page
+        render_weather_risk_page()
     else:
         page_tables(pid, user, db_paths)
